@@ -5,28 +5,31 @@ class CategoriaServicioModel:
 
     @staticmethod
     def create_categoria(data):
-        required_fields = ["nombre", "descripcion", "servicios"]
+        required_fields = ["nombre", "descripcion"]
         for field in required_fields:
             if field not in data:
                 raise ValueError(f"Campo requerido faltante: {field}")
             
-        if not isinstance(data["servicios"], list) or len(data["servicios"]) < 1:
-            raise ValueError("El campo 'servicios' debe ser un array con al menos un elemento")
+        if "servicios" not in data:
+            data["servicios"] = []
+        else:
+            if not isinstance(data["servicios"], list) or len(data["servicios"]) < 1:
+                raise ValueError("El campo 'servicios' debe ser un array con al menos un elemento")
         
-        for servicio in data["servicios"]:
-            required_servicio_fields = ["id_servicio", "nombre", "precio"]
-            for field in required_servicio_fields:
-                if field not in servicio:
-                    raise ValueError(f"Campo requerido en servicio: {field}")
-            
-            if not isinstance(servicio["id_servicio"], ObjectId):
-                try:
-                    servicio["id_servicio"] = ObjectId(servicio["id_servicio"])
-                except:
-                    raise ValueError(f"id_servicio inválido: {servicio['id_servicio']}")
+            for servicio in data["servicios"]:
+                required_servicio_fields = ["id_servicio"]
+                for field in required_servicio_fields:
+                    if field not in servicio:
+                        raise ValueError(f"Campo requerido en servicio: {field}")
                 
-            if not isinstance(servicio["precio"], (int, float)) or servicio["precio"] < 0:
-                raise ValueError(f"Precio debe ser número positivo: {servicio['precio']}")
+                if not isinstance(servicio["id_servicio"], ObjectId):
+                    try:
+                        servicio["id_servicio"] = ObjectId(servicio["id_servicio"])
+                    except:
+                        raise ValueError(f"id_servicio inválido: {servicio['id_servicio']}")
+                
+                if not isinstance(servicio["precio"], (int, float)) or servicio["precio"] < 0:
+                    raise ValueError(f"Precio debe ser número positivo: {servicio['precio']}")
         
         return mongo.db.categorias_servicios.insert_one(data).inserted_id
 

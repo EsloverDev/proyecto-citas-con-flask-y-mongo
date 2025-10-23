@@ -7,18 +7,7 @@ class CategoriaServicioService:
         nueva_categoria = {
             "nombre": "Cortes de cabello",
             "descripcion": "Servicios profesionales de corte y estilo",
-            "servicios": [
-                {
-                    "id_servicio": ObjectId(),
-                    "nombre": "Corte Básico",
-                    "precio": 15000
-                },
-                {
-                    "id_servicio": ObjectId(),
-                    "nombre": "Corte con shaver",
-                    "precio": 26000
-                }
-            ]
+            "servicios": []
         }
 
         inserted_id = CategoriaServicioModel.create_categoria(nueva_categoria)
