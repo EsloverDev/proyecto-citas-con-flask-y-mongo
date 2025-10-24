@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify
 from bson.errors import InvalidId
 from app.services.categoria_servicio_service import CategoriaServicioService
 
