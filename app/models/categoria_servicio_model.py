@@ -13,8 +13,8 @@ class CategoriaServicioModel:
         if "servicios" not in data:
             data["servicios"] = []
         else:
-            if not isinstance(data["servicios"], list) or len(data["servicios"]) < 1:
-                raise ValueError("El campo 'servicios' debe ser un array con al menos un elemento")
+            if not isinstance(data["servicios"], list):
+                raise ValueError("El campo 'servicios' debe ser un array")
         
             for servicio in data["servicios"]:
                 required_servicio_fields = ["id_servicio"]

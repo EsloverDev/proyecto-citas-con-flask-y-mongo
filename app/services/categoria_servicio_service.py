@@ -11,7 +11,7 @@ class CategoriaServicioService:
         }
 
         inserted_id = CategoriaServicioModel.create_categoria(nueva_categoria)
-        return {"message": "Categoría de ejemplo creada", "id": str(inserted_id)}
+        return {"message": "Categoría creada", "id": str(inserted_id)}
     
     def obtener_todas_categorias(self):
         categorias = CategoriaServicioModel.get_all_categorias()

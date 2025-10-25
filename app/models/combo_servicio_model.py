@@ -10,9 +10,12 @@ class ComboServicioModel:
             if field not in data:
                 raise ValueError(f"Campo requerido faltante: {field}")
             
-        if not isinstance(data["servicios_incluidos", list]) or len(data["servicios_incluidos"]) < 1:
+        if not isinstance(data["servicios_incluidos"], list) or len(data["servicios_incluidos"]) < 1:
             raise ValueError("El campo ´servicios_incluidos' debe ser un array con al menos un servicio")
         
+        if not isinstance(data["precio_total"], (int, float)) or data["precio_total"] < 0:
+                raise ValueError("precio_total debe ser un número positivo")
+
         for servicio in data["servicios_incluidos"]:
             required_servicio_fields = ["id_servicio", "nombre"]
             for field in required_servicio_fields:
@@ -24,26 +27,30 @@ class ComboServicioModel:
                     servicio["id_servicio"] = ObjectId(servicio["id_servicio"])
                 except:
                     raise ValueError(f"id_servicio inválido: {servicio['id_servicio']}")
-                
-            if not isinstance(data["precio_total"], (int, float)) or data["precio_total"] < 0:
-                raise ValueError("precio_total debe ser un número positivo")
             
-            if "promocion" in data and data["promocion"]:
-                required_promocion_fields = ["porcentaje_descuento", "fecha_inicio", "fecha_fin"]
+        if "promocion" in data and data["promocion"]:
+            required_promocion_fields = ["porcentaje_descuento", "fecha_inicio", "fecha_fin"]
 
-                for field in required_promocion_fields:
-                    if field not in data["promocion"]:
-                        raise ValueError(f"Campo requerido en promocion: {field}")
-                    
-                descuento = data["promocion"]["porcentaje_descuento"]
-                if not isinstance(descuento, (int, float)) or descuento < 0 or descuento > 100:
-                    raise ValueError("porcentaje_descuento debe ser un número entre 0 y 100")
+            for field in required_promocion_fields:
+                if field not in data["promocion"]:
+                    raise ValueError(f"Campo requerido en promocion: {field}")
                 
-                if not isinstance(data["promoción"]["fecha_inicio"], datetime):
+            descuento = data["promocion"]["porcentaje_descuento"]
+            if not isinstance(descuento, (int, float)) or descuento < 0 or descuento > 100:
+                raise ValueError("porcentaje_descuento debe ser un número entre 0 y 100")
+            
+            try:
+                if isinstance(data["promocion"]["fecha_inicio"], str):
+                    data["promocion"]["fecha_inicio"] = datetime.strptime(data["promocion"]["fecha_inicio"], '%Y-%m-%d')
+                elif not isinstance(data["promocion"]["fecha_inicio"], datetime):
                     raise ValueError("fecha_inicio debe ser una fecha válida")
-                
-                if not isinstance(data["promocion"]["fecha_fin"], datetime):
+            
+                if isinstance(data["promocion"]["fecha_fin"], str):
+                    data["promocion"]["fecha_fin"] = datetime.strptime(data["promocion"]["fecha_fin"], '%Y-%m-%d')
+                elif not isinstance(data["promocion"]["fecha_fin"], datetime):
                     raise ValueError("fecha_fin debe ser una fecha válida")
+            except ValueError as e:
+                raise ValueError(f"Formato de fecha inválido. Use YYYY-MM-DD: {str(e)}")
                 
         return mongo.db.combos_servicios.insert_one(data).inserted_id
 
@@ -100,7 +107,7 @@ class ComboServicioModel:
                 raise ValueError("id_servicio inválido")
         
         return mongo.db.combos_servicios.update_one(
-            {"id": ObjectId(combo_id)},
+            {"_id": ObjectId(combo_id)},
             {"$push": {"servicios_incluidos": servicio_data}}
         )
     
@@ -112,10 +119,11 @@ class ComboServicioModel:
             except:
                 raise ValueError("servicio_id inválido")
             
-        return mongo.db.combos_servicios.update_one(
+        resultado = mongo.db.combos_servicios.update_one(
             {"_id": ObjectId(combo_id)},
             {"$pull": {"servicios_incluidos": {"id_servicio": servicio_id}}}
         )
+        return resultado
 
     @staticmethod
     def delete_combo(combo_id):

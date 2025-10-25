@@ -1,6 +1,7 @@
 from flask import jsonify, request
 from bson.errors import InvalidId
 from app.services.combo_servicio_service import ComboServicioService
+import traceback
 
 class ComboServicioController:
     def __init__(self):
@@ -13,12 +14,14 @@ class ComboServicioController:
             if not combo_data:
                 return jsonify({"error": "No se enviaron datos para crear el combo"}), 400
             
+            #print(f"Datos recibidos: {combo_data}")
+
             combo = self.service.crearCombo(combo_data)
             return jsonify(combo), 201
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception as e:
-            return jsonify({"error": "Error interno del servidor"}), 500
+            return jsonify({"error": "Error interno del servidor", "detalle": str(e), "traceback": traceback.format_exc()}), 500
         
     def obtener_combos(self):
         try:
