@@ -17,19 +17,18 @@ class CategoriaServicioModel:
                 raise ValueError("El campo 'servicios' debe ser un array")
         
             for servicio in data["servicios"]:
-                required_servicio_fields = ["id_servicio"]
-                for field in required_servicio_fields:
-                    if field not in servicio:
-                        raise ValueError(f"Campo requerido en servicio: {field}")
-                
+                if "id_servicio" not in servicio:
+                    raise ValueError("Campo requerido en servicio: id_servicio")
+                                    
                 if not isinstance(servicio["id_servicio"], ObjectId):
                     try:
                         servicio["id_servicio"] = ObjectId(servicio["id_servicio"])
                     except:
                         raise ValueError(f"id_servicio inválido: {servicio['id_servicio']}")
                 
-                if not isinstance(servicio["precio"], (int, float)) or servicio["precio"] < 0:
-                    raise ValueError(f"Precio debe ser número positivo: {servicio['precio']}")
+                if "precio" in servicio:
+                    if not isinstance(servicio["precio"], (int, float)) or servicio["precio"] < 0:
+                        raise ValueError(f"Precio debe ser número positivo: {servicio['precio']}")
         
         return mongo.db.categorias_servicios.insert_one(data).inserted_id
 
@@ -54,10 +53,8 @@ class CategoriaServicioModel:
 
     @staticmethod
     def add_servicio_to_categoria(categoria_id, servicio):
-        required_servicio_fields = ["id_servicio", "nombre", "precio"]
-        for field in required_servicio_fields:
-            if field not in servicio:
-                raise ValueError(f"Campo requerido en servicio: {field}")
+        if "id_servicio" not in servicio:
+            raise ValueError(f"Campo requerido en servicio: id_servicio")
             
         if not isinstance(servicio["id_servicio"], ObjectId):
             try:
@@ -65,8 +62,9 @@ class CategoriaServicioModel:
             except:
                 raise ValueError(f"id_servicio inválido: {servicio['id_servicio']}")
             
-        if not isinstance(servicio["precio"], (int, float)) or servicio["precio"] < 0:
-            raise ValueError(f"Precio debe ser un número positivo: {servicio['precio']}")
+        if "precio" in servicio:
+            if not isinstance(servicio["precio"], (int, float)) or servicio["precio"] < 0:
+                raise ValueError(f"Precio debe ser un número positivo: {servicio['precio']}")
 
         return mongo.db.categorias_servicios.update_one(
             {"_id": ObjectId(categoria_id)},
@@ -85,3 +83,8 @@ class CategoriaServicioModel:
             {"_id": ObjectId(categoria_id)},
             {"$pull": {"servicios": {"id_servicio": id_servicio}}}
         )
+
+    @staticmethod
+    def categoria_exists(categoria_id):
+        categoria = mongo.db.categorias_servicios.find_one({"_id": ObjectId(categoria_id)})
+        return categoria is not None
