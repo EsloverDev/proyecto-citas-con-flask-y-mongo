@@ -4,44 +4,25 @@ from bson.objectid import ObjectId
 
 class ServicioService:
 
-    def crear_servicio(self, categoria_id = None):
-        nuevo_servicio = {
-            "nombre": "Corte de cabello básico",
-            "precio": 15000,
-            "duracion_minutos": 30,
-            "detalle": {
-                "descripcion": "Corte básico de cabello",
-                "materiales": ["Tijeras", "Peine", "Capa"]
-            },
-            "imagen": [
-                {
-                    "url": "https://ejemplo.com/corte-basico.jpg",
-                    "descripcion": "Resultado del corte basico"
-                }
-            ]
-        }
-
-        if categoria_id:
-            if not CategoriaServicioModel.get_categoria_by_id(categoria_id):
+    def crear_servicio(self, servicio_data):
+        if "categoria_id" in servicio_data and servicio_data['categoria_id']:
+            if not CategoriaServicioModel.categoria_exists(servicio_data['categoria_id']):
                 raise ValueError("Categoría no encontrada")
-            else:
-                nuevo_servicio["categoria_id"] = categoria_id
 
-        servicio_id = ServicioModel.create_service(nuevo_servicio)
-
-        if categoria_id:
+        servicio_id = ServicioModel.create_service(servicio_data)
+        if "categoria_id" in servicio_data and servicio_data["categoria_id"]:
             servicio_para_categoria = {
                 "id_servicio": servicio_id,
-                "nombre": nuevo_servicio["nombre"],
-                "precio": nuevo_servicio["precio"]
+                "nombre": servicio_data["nombre"],
+                "precio": servicio_data["precio"]
             }
 
-            CategoriaServicioModel.add_servicio_to_categoria(categoria_id, servicio_para_categoria)
+            CategoriaServicioModel.add_servicio_to_categoria(servicio_data["categoria_id"], servicio_para_categoria)
 
         return {
-            "message": "Servicio insertado" + (" con categoria" if categoria_id else " sin categoria"),
+            "message": "Servicio insertado" + (" con categoria" if servicio_data['categoria_id'] else " sin categoria"),
             "servicio_id": str(servicio_id),
-            "categoria_id": str(categoria_id) if categoria_id else None
+            "categoria_id": str(servicio_data['categoria_id']) if servicio_data['categoria_id'] else None
             }
     
     def obtener_todos_servicios(self):
@@ -70,11 +51,10 @@ class ServicioService:
             raise ValueError("Servicio no encontrado")
         
     def obtener_servicios_por_categoria(self, categoria_id):
-        if not CategoriaServicioModel.get_categoria_by_id(categoria_id):
+        if not CategoriaServicioModel.categoria_exists(categoria_id):
             raise ValueError("Categoría no encontrada")
         
         servicios = ServicioModel.get_services_by_categoria(categoria_id)
-
         for servicio in servicios:
             servicio['_id'] = str(servicio['_id'])
             servicio['categoria_id'] = str(servicio['categoria_id'])
@@ -88,7 +68,6 @@ class ServicioService:
     
     def obtener_servicios_sin_categoria(self):
         servicios = ServicioModel.get_services_sin_categoria()
-        
         for servicio in servicios:
             servicio['_id'] = str(servicio['_id'])
 
@@ -98,30 +77,22 @@ class ServicioService:
             "message": "Servicios sin categoría asignada"
         }
 
-    def actualizar_servicio(self, servicio_id):
-        datos_actualizacion = {
-            "precio": 18000,
-            "duracion_minutos": 45,
-            "detalle": {
-                "descripcion": "Corte básico PREMIUM para caballero",
-                "materiales": ["Tijeras", "Peine", "Capa", "Productos premium"]
-            }
-        }
-
+    def actualizar_servicio(self, servicio_id, datos_actualizacion):
         if not ServicioModel.service_exists(servicio_id):
             raise ValueError("Servicio no encontrado")
         
+        if "categoria_id" in datos_actualizacion and datos_actualizacion["categoria_id"]:
+            if not CategoriaServicioModel.categoria_exists(datos_actualizacion["categoria_id"]):
+                raise ValueError("Categoría no encontrada")
+            
         resultado = ServicioModel.update_service(servicio_id, datos_actualizacion)
-
         if resultado.modified_count > 0:
             return {"message": "Servicio actualizado"}
         else:
             return {"message": "No se realizaron cambios en el servicio"}
     
-    def actualizar_categoria_servicio(self, servicio_id, nueva_categoria_id = None):
-        
+    def actualizar_categoria_servicio(self, servicio_id, nueva_categoria_id=None):
         servicio = ServicioModel.get_service_by_id(servicio_id)
-
         if not servicio:
             raise ValueError("Servicio no encontrado")
         
@@ -129,7 +100,6 @@ class ServicioService:
             raise ValueError("Categoría no encontrada")
         
         categoria_anterior = servicio.get('categoria_id')
-
         if categoria_anterior:
             CategoriaServicioModel.remove_servicio_from_categoria(str(categoria_anterior), servicio_id)
 
@@ -145,7 +115,6 @@ class ServicioService:
             CategoriaServicioModel.add_servicio_to_categoria(nueva_categoria_id, servicio_para_categoria)
 
         mensaje = "Categoría del servicio actualizada" if nueva_categoria_id else "Servicio removido de categoría"
-
         return {
             "message": mensaje,
             "servicio_id": servicio_id,
@@ -155,7 +124,6 @@ class ServicioService:
 
     def eliminar_servicio(self, servicio_id):
         servicio = ServicioModel.get_service_by_id(servicio_id)
-        
         if not servicio:
             raise ValueError("Servicio no encontrado")
         
@@ -163,18 +131,16 @@ class ServicioService:
             CategoriaServicioModel.remove_servicio_from_categoria(str(servicio['categoria_id']), servicio_id)
         
         resultado = ServicioModel.delete_service(servicio_id)
-
         if resultado.deleted_count > 0:
             return {"message": "Servicio eliminado correctamente"}
         else:
             raise ValueError("No se pudo eliminar el servicio")
         
     def contar_servicios_por_categoria(self, categoria_id):
-        if not CategoriaServicioModel.get_categoria_by_id(categoria_id):
+        if not CategoriaServicioModel.categoria_exists(categoria_id):
             raise ValueError("Categoria no encontrada")
         
         cantidad = ServicioModel.count_services_by_categoria(categoria_id)
-
         return {
             "categoria_id": categoria_id,
             "total_servicios": cantidad,

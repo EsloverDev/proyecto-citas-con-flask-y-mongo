@@ -8,11 +8,16 @@ class ServicioController:
 
     def insertar_servicio(self):
         try:
-            categoria_id = request.args.get('categoria_id')
-            servicio = self.service.crear_servicio(categoria_id)
+            servicio_data = request.get_json()
+            if not servicio_data:
+                return jsonify({"error": "No se enviaron datos para crear el servicio"}), 400
+
+            servicio = self.service.crear_servicio(servicio_data)
             return jsonify(servicio), 201
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
+        except InvalidId:
+            return jsonify({"error": "Id de categoría inválido"}), 400
         except Exception as e:
             return jsonify({"error": "Error interno del servidor"}), 500
         
@@ -51,22 +56,25 @@ class ServicioController:
             return jsonify(servicios), 200
         except Exception as e:
             return jsonify({"error": "Error interno del servidor"}), 500
-        
+
     def modificar_servicio(self, servicio_id):
         try:
-            servicio_modificado = self.service.actualizar_servicio(servicio_id)
+            datos_actualizacion = request.get_json()
+            if not datos_actualizacion:
+                return jsonify({"error": "No se enviaron datos para actualizar"}), 400
+            
+            servicio_modificado = self.service.actualizar_servicio(servicio_id, datos_actualizacion)
             return jsonify(servicio_modificado), 200
         except ValueError as e:
             return jsonify({"error": str(e)}), 404
         except InvalidId:
-            return jsonify({"error": "Id de servicio inválido"}), 400
+            return jsonify({"error": "Id de servicio o de la categoría inválido"}), 400
         except Exception as e:
             return jsonify({"error": "Error interno del servidor"}), 500
-        
+
     def modificar_categoria_servicio(self, servicio_id):
         try:
             nueva_categoria_id = request.args.get('nueva_categoria_id')
-
             if nueva_categoria_id in ["null", "", "None"]:
                 nueva_categoria_id = None
 
@@ -100,7 +108,7 @@ class ServicioController:
             return jsonify({"error": "Id de la categoría inválido"}), 400
         except Exception as e:
             return jsonify({"error": "Error interno del servidor"}), 500
-        
+
     def verificar_servicio(self, servicio_id):
         try:
             servicio = self.service.verificar_servicio_existe(servicio_id)
@@ -108,4 +116,4 @@ class ServicioController:
         except InvalidId:
             return jsonify({"error": "Id del servicio inválido"}), 400
         except Exception as e:
-            return jsonify({"error": "Error interno del sevidor"}), 500
+            return jsonify({"error": "Error interno del servidor"}), 500
