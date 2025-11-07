@@ -57,6 +57,11 @@ class CategoriaServicioService:
 
         resultado = CategoriaServicioModel.add_servicio_to_categoria(categoria_id, servicio_data)
         if resultado.modified_count > 0:
+            try:
+                ServicioModel.update_service_categoria(servicio_data['id_servicio'], categoria_id)
+            except Exception as e:
+                print(f"Error actualizando el servicio: {e}")
+
             return {"message": "Servicio agregado a la categoría"}
         else:
             raise ValueError("No se pudo agregar el servicio a la categoría")
@@ -67,6 +72,11 @@ class CategoriaServicioService:
         
         resultado = CategoriaServicioModel.remove_servicio_from_categoria(categoria_id, servicio_id)
         if resultado.modified_count > 0:
+            try:
+                ServicioModel.update_service_categoria(servicio_id, None)
+            except Exception as e:
+                print(f"Error actualizando servicio: {e}")
+            
             return {"message": "Servicio eliminado de la categoría"}
         else:
             raise ValueError("No se pudo eliminar el servicio de la categoría")
@@ -75,8 +85,23 @@ class CategoriaServicioService:
         if not CategoriaServicioModel.categoria_exists(categoria_id):
             raise ValueError("Categoria no encontrada")
         
+        categoria = CategoriaServicioModel.get_categoria_by_id(categoria_id)
+        servicios_a_actualizar = []
+
+        if categoria is not None and "servicios" in categoria:
+            for servicio in categoria["servicios"]:
+                id_servicio = servicio.get('id_servicio')
+                if id_servicio:
+                    servicios_a_actualizar.append(str(id_servicio))
+
         resultado = CategoriaServicioModel.delete_categoria(categoria_id)
         if resultado.deleted_count > 0:
+            for servicio_id in servicios_a_actualizar:
+                try:
+                    ServicioModel.update_service_categoria(servicio_id, None)
+                except Exception as e:
+                    print(f"Error actualizando servicio {servicio_id}: {e}")
+                    
             return {"message": "Categoria eliminada correctamente"}
         else:
             raise ValueError("No se pudo eliminar la categoría")

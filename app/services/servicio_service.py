@@ -5,24 +5,25 @@ from bson.objectid import ObjectId
 class ServicioService:
 
     def crear_servicio(self, servicio_data):
-        if "categoria_id" in servicio_data and servicio_data['categoria_id']:
-            if not CategoriaServicioModel.categoria_exists(servicio_data['categoria_id']):
+        categoria_id = servicio_data.get("categoria_id")
+        if categoria_id:
+            if not CategoriaServicioModel.categoria_exists(categoria_id):
                 raise ValueError("Categoría no encontrada")
 
         servicio_id = ServicioModel.create_service(servicio_data)
-        if "categoria_id" in servicio_data and servicio_data["categoria_id"]:
+        if categoria_id:
             servicio_para_categoria = {
                 "id_servicio": servicio_id,
                 "nombre": servicio_data["nombre"],
                 "precio": servicio_data["precio"]
             }
 
-            CategoriaServicioModel.add_servicio_to_categoria(servicio_data["categoria_id"], servicio_para_categoria)
+            CategoriaServicioModel.add_servicio_to_categoria(categoria_id, servicio_para_categoria)
 
         return {
-            "message": "Servicio insertado" + (" con categoria" if servicio_data['categoria_id'] else " sin categoria"),
+            "message": "Servicio insertado" + (" con categoria" if categoria_id else " sin categoria"),
             "servicio_id": str(servicio_id),
-            "categoria_id": str(servicio_data['categoria_id']) if servicio_data['categoria_id'] else None
+            "categoria_id": str(categoria_id) if categoria_id else None
             }
     
     def obtener_todos_servicios(self):
@@ -92,7 +93,9 @@ class ServicioService:
             return {"message": "No se realizaron cambios en el servicio"}
     
     def actualizar_categoria_servicio(self, servicio_id, nueva_categoria_id=None):
+        print(f"servicio_id: {servicio_id}, nueva categoria_id: {nueva_categoria_id}")
         servicio = ServicioModel.get_service_by_id(servicio_id)
+        print(f"servicio encontrado = {servicio is not None}")
         if not servicio:
             raise ValueError("Servicio no encontrado")
         

@@ -1,6 +1,7 @@
 from flask import jsonify, request
 from bson.errors import InvalidId
 from app.services.servicio_service import ServicioService
+import traceback
 
 class ServicioController:
     def __init__(self):
@@ -12,6 +13,8 @@ class ServicioController:
             if not servicio_data:
                 return jsonify({"error": "No se enviaron datos para crear el servicio"}), 400
 
+            #print("Datos recibidos: ", servicio_data)
+
             servicio = self.service.crear_servicio(servicio_data)
             return jsonify(servicio), 201
         except ValueError as e:
@@ -19,6 +22,8 @@ class ServicioController:
         except InvalidId:
             return jsonify({"error": "Id de categoría inválido"}), 400
         except Exception as e:
+            #print("Excepcion no manejada: ", str(e))
+            #print(traceback.format_exc())
             return jsonify({"error": "Error interno del servidor"}), 500
         
     def obtener_servicios(self):

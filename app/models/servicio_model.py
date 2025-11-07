@@ -40,7 +40,12 @@ class ServicioModel:
     
     @staticmethod
     def get_services_sin_categoria():
-        return list(mongo.db.servicios.find({"categoria_id": {"$exists": False}}))
+        return list(mongo.db.servicios.find({
+            "$or": [
+                {"categoria_id": {"$exists": False}},
+                {"categoria_id": {"$in": [None, ""]}}
+            ]
+        }))
 
     @staticmethod
     def update_service(service_id, data):
@@ -58,7 +63,11 @@ class ServicioModel:
     
     @staticmethod
     def update_service_categoria(service_id, categoria_id):
-        update_data = {}
+        if not isinstance(service_id, ObjectId):
+            try:
+                service_id = ObjectId(service_id)
+            except:
+                raise ValueError("service_id inválido")
 
         if categoria_id:
             if not isinstance(categoria_id, ObjectId):
@@ -66,21 +75,17 @@ class ServicioModel:
                     categoria_id = ObjectId(categoria_id)
                 except:
                     raise ValueError("categoria_id inválido")
-
-            update_data["categoria_id"] = categoria_id
+            
+            return mongo.db.servicios.update_one(
+                {"_id": service_id},
+                {"$set": {"categoria_id": categoria_id}})
 
         else:
-            update_data["categoria_id"] = None
+            return mongo.db.servicios.update_one(
+                {"_id": service_id},
+                {"$unset": {"categoria_id": ""}})
 
-        if not isinstance(service_id, ObjectId):
-            try:
-                service_id = ObjectId(service_id)
-            except:
-                raise ValueError("service_id inválido")
 
-        return mongo.db.servicios.update_one(
-            {"_id": service_id},
-            {"$set": update_data})
 
     @staticmethod
     def delete_service(service_id):
@@ -93,4 +98,9 @@ class ServicioModel:
     
     @staticmethod
     def count_services_by_categoria(categoria_id):
-        return mongo.db.servicios.count_documents({"categoria_id": ObjectId(categoria_id)})
+        if not isinstance(categoria_id, ObjectId):
+            try:
+                categoria_id = ObjectId(categoria_id)
+            except:
+                raise ValueError("categoria_id inválido")
+        return mongo.db.servicios.count_documents({"categoria_id": categoria_id})
